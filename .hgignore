@@ -247,3 +247,6 @@ lablgtk3/sys_compat.ml
 yacc/floyd.ml
 yacc/floyd.mli
 yacc/floyd.output
+yacc/classic.ml
+yacc/classic.mli
+yacc/classic.output
