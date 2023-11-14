@@ -102,9 +102,7 @@ liblablgtk3.a: $(COBJS)
 	ar cr $@ $^
 	$(RANLIB) $@	
 
-WARN = -w s
-
-# gobject.cmo: WARN += -w -52
+WARN = -w -s-l
 
 gtkThread.cmi: gtkThread.mli
 	ocamlc $(MLFLAGS) $(INCLUDE) -c -thread -o $@ $<
