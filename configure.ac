@@ -306,9 +306,11 @@ if test "$enable_jit" != no; then
       AC_DEFINE(NEED_FPINIT, 1, [Reboot FPU for each primitive]);;
     x86_64-*) 
       ENABLE_JIT=1; VM=vm386.o;;
-    armv6l-*|armv7l-*|arm-*)
-      ENABLE_JIT=1; VM=vmpi.o; CODEPAGE=4096
-      AC_DEFINE(USE_FLUSH, 1, [Whether to flush the cache]);;
+    armv6l-*|armv7l-*|arm-*|aarch64-*)
+      if test $(getconf WORD_BIT) = 32; then
+          ENABLE_JIT=1; VM=vmpi.o; CODEPAGE=4096
+          AC_DEFINE(USE_FLUSH, 1, [Whether to flush the cache])
+      fi;;
     mipsel-*)
       ENABLE_JIT=1; VM=vmomega.o; FLOATOPS=0
       AC_DEFINE(USE_FLUSH, 1);;
