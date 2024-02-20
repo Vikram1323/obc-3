@@ -104,6 +104,10 @@ case $host in
     fi
     # Architecture for windows installation
     AC_SUBST(WIN_ARCH, x64);;
+  aarch64-*)
+    if test $(getconf LONG_BIT) = 64; then
+      AC_DEFINE(SEGMEM, 1, [Define to use segmented addressing])
+    fi;;
 esac
 
 case $host in
@@ -146,7 +150,7 @@ AC_SUBST(LD)
 AC_ARG_ENABLE(segmem,
   AS_HELP_STRING([--enable-segmem], [use segmented addressing]))
 if test "$enable_segmem" = yes; then
-  AC_DEFINE(SEGMEM, 1, [Define to use segmented addressing])
+  AC_DEFINE(SEGMEM, 1)
 fi
 
 GTKPKGS="gtk+-3.0 gtksourceview-3.0"
@@ -307,7 +311,7 @@ if test "$enable_jit" != no; then
     x86_64-*) 
       ENABLE_JIT=1; VM=vm386.o;;
     armv6l-*|armv7l-*|arm-*|aarch64-*)
-      if test $(getconf WORD_BIT) = 32; then
+      if test $(getconf LONG_BIT) = 32; then
           ENABLE_JIT=1; VM=vmpi.o; CODEPAGE=4096
           AC_DEFINE(USE_FLUSH, 1, [Whether to flush the cache])
       fi;;
