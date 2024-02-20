@@ -315,7 +315,7 @@ void *scratch_alloc(unsigned size, const char *reason) {
 #include <stdlib.h>
 
 /* scratch_alloc -- allocate storage without making it addressible */
-void *scratch_alloc(unsigned size) {
+void *scratch_alloc(unsigned size, const char *reason) {
      void *p = malloc(size);
      if (p == NULL) panic("malloc failed");
      memset(p, 0, size);
@@ -338,21 +338,21 @@ word map_segment(void *p, unsigned len) {
 }
 
 /* get_chunk -- allocate a chunk of storage and make it addressible */
-word get_chunk(unsigned size) {
-     void *p = scratch_alloc(size);
+word get_chunk(unsigned size, const char *reason) {
+     void *p = scratch_alloc(size, reason);
      return map_segment(p, size);
 }
 
 static word alloc_ptr = 0, alloc_limit;
 
 /* virtual_alloc -- allocate unreclaimable storage that is addressible */
-word virtual_alloc(unsigned size) {
+word virtual_alloc(unsigned size, const char *reason) {
      word p;
 
      ASSERT(size < SEGSIZE);
 
      if (alloc_ptr == 0 || alloc_ptr + size > alloc_limit) {
-          alloc_ptr = get_chunk(SEGSIZE);
+          alloc_ptr = get_chunk(SEGSIZE, reason);
           alloc_limit = alloc_ptr + SEGSIZE;
      }
 
