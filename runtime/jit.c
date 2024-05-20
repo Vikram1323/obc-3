@@ -95,11 +95,11 @@ static vmlabel stack_oflo, retlab;
 #define addr32(a) ((int) (ptrtype) a)
 
 /* prolog -- generate code for procedure prologue */
-static word prolog(const char *name) {
+static word prolog(void) {
      int frame = jit_cxt[CP_FRAME].i;
      int map = jit_cxt[CP_MAP].i;
      vmlabel lab = vm_newlab();
-     word entry = vm_begin(name, 1);
+     word entry = vm_begin(1);
      vm_gen(GETARG, rBP->r_reg, 0);
      vm_gen(LDW, rCP->r_reg, rBP->r_reg, 4*CP);
 
@@ -844,8 +844,6 @@ static void make_error(vmlabel lab, int code, int line) {
      gcall(rterror, 3);
 }
 
-static int serial;              /* Serial number for anonymous procedures */
-
 /* jit_compile -- replace a bytecode routine with native code */
 void jit_compile(value *cp) {
      proc p = find_proc(dsegaddr(cp));
@@ -866,9 +864,7 @@ void jit_compile(value *cp) {
      retlab = vm_newlab();
 
      map_labels();
-     const char *pname =
-          (p != NULL ? p->p_name : mysprintf("G_%d", ++serial));
-     word entry = prolog(pname);
+     word entry = prolog();
      translate();
      do_errors(make_error);
      vm_label(retlab);

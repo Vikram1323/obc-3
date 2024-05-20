@@ -144,7 +144,7 @@ registers.  The call itself becomes the sequence
 where n <= 3 is the number of arguments.  The ARG instructions
 (exactly n of them) specify the arguments in right-to-left order.
 
-A subroutine is compiled by first calling vm_begin(name, n), where n
+A subroutine is compiled by first calling vm_begin(n), where n
 is the number of arguments.  The procedure code begins with exactly n
 GETARG instructions:
 
@@ -230,8 +230,8 @@ void vm_gen4rrrs(operation op, vmreg a, vmreg b, vmreg c, int s);
 
 int vm_addr(void *x);
 
-unsigned vm_begin_locals(const char *name, int n, int locs);
-#define vm_begin(name, n) vm_begin_locals(name, n, 0);
+unsigned vm_begin_locals(int n, int locs);
+#define vm_begin(n) vm_begin_locals(n, 0);
 void vm_end(void);
 
 int vm_jumptable(int n);

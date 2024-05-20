@@ -50,7 +50,6 @@
 #define MIN 128                 /* Min space at beginning of routine */
 
 code_addr pc;                   /* Current assembly location */
-static const char *proc_name;
 static code_addr proc_beg, codebuf, limit;
 
 /* byte -- contribute a byte to the object code */
@@ -153,8 +152,7 @@ static void vm_flush(void) {
 #endif
 
 /* vm_begin -- begin new procedure */
-unsigned vm_begin_locals(const char *name, int n, int locs) {
-     proc_name = name;
+unsigned vm_begin_locals(int n, int locs) {
      vm_space(MIN);
      proc_beg = pc;
 #ifdef NO_WRITEXEC
@@ -192,17 +190,6 @@ void vm_end(void) {
      vm_postlude();
      vm_reset();
 
-     if (vm_debug >= 5) {
-	  // This is broken if we switched pages in mid-stream.
-          char buf[128];
-          strcpy(buf, proc_name);
-          strcat(buf, ".vmdump");
-          FILE *fp = fopen(buf, "wb");
-          printf("Dumping\n");
-          if (fp == NULL) return;
-          fwrite(proc_beg, 1, pc-proc_beg, fp);
-          fclose(fp);
-     }
 #ifdef NO_WRITEXEC
      set_exec();
 #endif
