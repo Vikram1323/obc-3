@@ -221,6 +221,8 @@ void xmain_exit(int status);
 void error_exit(int status);
 
 /* support.c */
+char *mysprintf(const char *fmt, ...);
+
 int ob_div(int a, int b);
 int ob_mod(int a, int b);
 

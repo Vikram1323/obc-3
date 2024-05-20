@@ -849,15 +849,6 @@ static int serial;              /* Serial number for anonymous procedures */
 /* jit_compile -- replace a bytecode routine with native code */
 void jit_compile(value *cp) {
      proc p = find_proc(dsegaddr(cp));
-     const char *pname;
-     static char name[16];
-
-     if (p != NULL)
-          pname = p->p_name;
-     else {
-          sprintf(name, "G_%d", ++serial);
-          pname = name;
-     }
 
 #ifdef DEBUG
      if (dflag >= 1)
@@ -875,6 +866,8 @@ void jit_compile(value *cp) {
      retlab = vm_newlab();
 
      map_labels();
+     const char *pname =
+          (p != NULL ? p->p_name : mysprintf("G_%d", ++serial));
      word entry = prolog(pname);
      translate();
      do_errors(make_error);

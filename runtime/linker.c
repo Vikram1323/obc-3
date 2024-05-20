@@ -799,9 +799,9 @@ static void do_directive(const char *dir, int n, char *rands[], int nrands) {
 	  check_inproc(dir);
 
 	  if (gflag) {
-	       char buf[64];
-	       sprintf(buf, "%s.%s", sym_name(this_module), rands[0]);
-	       put_mark(make_symbol(buf));
+	       char *sym =
+                    must_sprintf("%s.%s", sym_name(this_module), rands[0]);
+	       put_mark(make_symbol(sym));
 	  }
 
 	  if (linecount) 
@@ -844,8 +844,7 @@ void gen_inst(const char *fmt, ...) {
      va_list ap;
 
      va_start(ap, fmt);
-     vsprintf(line, fmt, ap);
-     strcat(line, "\n");
+     vsnprintf(line, 80, fmt, ap);
      va_end(ap);
 
      nwords = split_line(line, words);

@@ -218,8 +218,6 @@ static void trace_imports(void) {
 
 /* gen_main -- generate the main program */
 static void gen_main(void) {
-     char buf[128];
-
      if (known("MAIN")) return;
 
      err_file = (char *) "main program";
@@ -237,9 +235,9 @@ static void gen_main(void) {
      /* Code to call each module body */
      for (int i = 0; i < nmodules; i++) {
 	  if (!module[i].m_needed) continue;
-	  sprintf(buf, "%s.%%main", module[i].m_name);
-	  if (known(buf)) {
-	       gen_inst("GLOBAL %s", buf);
+	  char *sym = must_sprintf("%s.%%main", module[i].m_name);
+	  if (known(sym)) {
+	       gen_inst("GLOBAL %s", sym);
 	       gen_inst("CALL 0");
 	  }
      }
@@ -250,10 +248,10 @@ static void gen_main(void) {
      gen_inst("DEFINE GCMAP");
      for (int i = 0; i < nmodules; i++) {
 	  if (!module[i].m_needed) continue;
-	  sprintf(buf, "%s.%%gcmap", module[i].m_name);
-	  if (known(buf)) {
+	  char *sym = must_sprintf("%s.%%gcmap", module[i].m_name);
+	  if (known(sym)) {
 	       gen_inst("WORD GC_MAP");
-	       gen_inst("WORD %s", buf);
+	       gen_inst("WORD %s", sym);
 	  }
      }
      gen_inst("WORD GC_END");

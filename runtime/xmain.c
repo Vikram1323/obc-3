@@ -221,10 +221,8 @@ void error_stop(const char *msg, int val, int line, value *bp, uchar *pc) {
      value *cp = valptr(bp[CP]);
 
 #ifdef OBXDEB
-     char buf[256];
-     sprintf(buf, msg, val);
      debug_regs(cp, bp, pc);
-     debug_message("error %d %s", line, buf);
+     debug_message("error %d %s", line, mysprintf(msg, val));
      debug_break();
 #else
      module mod = find_module(dsegaddr(cp));
@@ -334,17 +332,20 @@ char *search_path(char *name) {
      if (path == NULL) return NULL;
 
      for (char *p = path, *q; p != NULL; p = q) {
+          int n;
+          
 	  q = strchr(p, ':');
-          char *r;
-	  if (q == NULL) {
-	       strcpy(buf, p);
-	       r = buf + strlen(p);
-	  } else {
-	       strncpy(buf, p, q-p);
-	       r = buf + (q-p); q++;
-	  }
-	  if (r > buf) *r++ = '/';
-	  strcpy(r, name);
+	  if (q == NULL)
+               n = strlen(p);
+          else {
+               n = q-p; q++;
+          }
+          if (n+strlen(name)+2 > 256) panic("path segment too long");
+          if (n > 0) {
+               memcpy(buf, p, n);
+               buf[n++] = '/';
+          }
+	  strcpy(&buf[n], name);
 
 	  if (access(buf, R_OK) == 0 && stat(buf, &stbuf) == 0
 	      && S_ISREG(stbuf.st_mode))

@@ -111,6 +111,27 @@ void *must_realloc(void *p, int n0, int n, const char *msg) {
      return p;
 }
 
+char *must_sprintf(char *fmt, ...) {
+     va_list va;
+     static char *buf;
+     static int nbuf = 64;
+     
+     if (buf == NULL)
+          buf = must_alloc(nbuf, "sprintf buffer");
+
+     for (;;) {
+          va_start(va, fmt);
+          int result = vsnprintf(buf, nbuf, fmt, va);
+          va_end(va);
+
+          if (result >= 0 && result < nbuf)
+               return buf;
+
+          free(buf);
+          buf = must_alloc(nbuf *= 2, "sprintf buffer");
+     }
+}
+
 void _buf_init(struct _growbuf *b, int size, int margin, 
 		       int elsize, const char *name) {
      b->buf = must_alloc(size * elsize, name);
@@ -197,3 +218,4 @@ int split_line(char *line, char **words) {
 
      return nwords;
 }
+

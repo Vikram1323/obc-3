@@ -74,6 +74,13 @@ static char *format_count(counter n) {
      return buf;
 }
 
+/* format_index -- format a list index as [n] */
+static char *format_index(proc p) {
+     static char buf[32];
+     sprintf(buf, "[%d]", p->p_index);
+     return buf;
+}
+
 #define SPONTANEOUS (-1)
 
 static struct _proc no_proc = {
@@ -94,7 +101,6 @@ static proc find_node(word p) {
 static void dump_state(state s, mybool stats) {
      int n = s->s_depth, x = 3;
      word *hist = s->s_history;
-     char buf[64];
 
      printf("> State %d:\n", s->s_num);
      printf(">   ");
@@ -103,13 +109,11 @@ static void dump_state(state s, mybool stats) {
      else {
 	  for (int i = 0; i < n; i++) {
 	       proc p = find_node(ptr(hist[i]));
-	       if (marked(hist[i]))
-		    sprintf(buf, "(%s)", p->p_name);
-	       else
-		    sprintf(buf, "%s", p->p_name);
-
-	       printf(" %s", buf);
-	       x += strlen(buf)+1;
+               const char *item =
+                    (marked(hist[i]) ? mysprintf("(%s)", p->p_name)
+                     : p->p_name);
+	       printf(" %s", item);
+	       x += strlen(item)+1;
 
 	       if (x > 60) {
 		    printf("\n>    "); x = 5;
@@ -542,7 +546,6 @@ static void flat_profile(FILE *fp) {
 }
 
 static void graph_profile(FILE *fp) {
-     char buf1[64], buf2[64];
      arc *abuf = scratch_alloc_atomic(256 * sizeof(arc), "profile buffer");
 
      /* Finished executing, so we can sort the proc table into
@@ -570,26 +573,22 @@ static void graph_profile(FILE *fp) {
 		(int (*)(const void *, const void *)) cfarcs2);
 	  for (int j = 0; j < n; j++) {
 	       arc a = abuf[j];
-	       if (a->a_src->p_addr == SPONTANEOUS)
-		    sprintf(buf1, "<spontaneous>");
-	       else
-		    sprintf(buf1, "%s [%d]", a->a_src->p_name, 
-			    a->a_src->p_index);
+               char *src = (a->a_src->p_addr == SPONTANEOUS
+                            ? "<spontaneous>"
+                            : mysprintf("%s %s", a->a_src->p_name, 
+                                        format_index(a->a_src)));
 	       fprintf(fp, FMT1,
 		       percent(a->a_self2), percent(a->a_child2),
-		       a->a_count, p->p_calls, buf1);
+		       a->a_count, p->p_calls, src);
 	  }
 	  
-	  sprintf(buf1, "[%d]", i+1);
-	  if (p->p_rec == 0)
-	       sprintf(buf2, "%7u", p->p_calls);
-	  else
-	       sprintf(buf2, "%7u+%-u", p->p_calls, p->p_rec);
-
+          char *calls = (p->p_rec == 0
+                         ? mysprintf("%7u", p->p_calls)
+                         : mysprintf("%7u+%u", p->p_calls, p->p_rec));
 	  fprintf(fp, FMT2,
-		  buf1, percent(p->p_self + p->p_child),
+		  format_index(p), percent(p->p_self + p->p_child),
 		  percent(p->p_self), percent(p->p_child),
-		  buf2, p->p_name, i+1);
+		  calls, p->p_name, i+1);
 
 	  n = 0;
 	  for (arc a = p->p_children; a != NULL; a = a->a_clink)
@@ -598,11 +597,11 @@ static void graph_profile(FILE *fp) {
 		(int (*)(const void *, const void *)) cfarcs1);
 	  for (int j = 0; j < n; j++) {
 	       arc a = abuf[j];
-	       sprintf(buf1, "%s [%d]", a->a_dst->p_name, 
-		       a->a_dst->p_index);
+	       char *dest = mysprintf("%s %s", a->a_dst->p_name, 
+                                      format_index(a->a_dst));
 	       fprintf(fp, FMT1,
 		       percent(a->a_self1), percent(a->a_child1), 
-		       a->a_count, a->a_dst->p_calls, buf1);
+		       a->a_count, a->a_dst->p_calls, dest);
 	  }
 
 	  fprintf(fp, "%s\n", DIVR);
@@ -611,8 +610,6 @@ static void graph_profile(FILE *fp) {
 
 /* graph_index -- print alphabetical index for call graph profile */
 static void graph_index(FILE *fp) {
-     char buf[80];
-
      /* Sort the procedures yet again */
      int n = 0, maxw = 1;
      while (n < nprocs && proctab[n]->p_calls > 0) {
@@ -640,8 +637,8 @@ static void graph_index(FILE *fp) {
 	       c = (r+k-1)/k;
 	       if (i >= c) break;
                proc p = proctab[n-r+i];
-	       sprintf(buf, "%s [%d]", p->p_name, p->p_index);
-	       fprintf(fp, "  %-*s", maxw+6, buf);
+	       char *entry = mysprintf("%s [%d]", p->p_name, p->p_index);
+	       fprintf(fp, "  %-*s", maxw+6, entry);
 	  }
 	  fprintf(fp, "\n");
      }

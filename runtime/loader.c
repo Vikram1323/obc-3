@@ -151,6 +151,7 @@ static char *read_string() {
      do {
 	  c = bingetc();
 	  if (c == EOF) panic("*unexpected EOF");
+          if (n == 256) panic("symbol too long");
 	  buf[n++] = c;
      } while (c != '\0');
 
@@ -236,7 +237,7 @@ void load_file(FILE *bfp) {
 		"  it needs a different version of the runtime system]");
 
      /* Decode the other data */
-     int seglen[NSEGS];
+     unsigned seglen[NSEGS];
      for (int i = 0; i < NSEGS; i++)
 	  seglen[i] = get_int(t.segment[i]);
 
@@ -249,7 +250,7 @@ void load_file(FILE *bfp) {
 
 #ifdef DEBUG
      if (dflag >= 1) {
-	  printf("csize = %d, dsize = %d, bss = %d, stk = %d\n", 
+	  printf("csize = %u, dsize = %u, bss = %u, stk = %u\n", 
 		 seglen[S_CODE], seglen[S_DATA], 
 		 seglen[S_BSS], seglen[S_STACK]);
 	  printf("nmods = %d, nprocs = %d, nsyms = %d\n",

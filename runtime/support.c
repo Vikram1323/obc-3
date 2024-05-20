@@ -56,6 +56,26 @@ void panic(const char *msg, ...) {
      error_exit(3);
 }
 
+char *mysprintf(const char *fmt, ...) {
+     static char *buf = NULL;
+     static int nbuf = 64;
+     va_list va;
+     
+     if (buf == NULL)
+          buf = scratch_alloc_atomic(nbuf, "sprintf buffer");
+
+     for (;;) {
+          va_start(va, fmt);
+          int result = vsnprintf(buf, nbuf, fmt, va);
+          va_end(va);
+
+          if (result >= 0  && result < nbuf)
+               return buf;
+
+          nbuf *= 2;
+          buf = scratch_alloc_atomic(nbuf, "sprintf buffer");
+     }
+}
 
 /* The DIV and MOD instructions must give the correct results, even if 
    C is wrong.  Correct means that b * (a DIV b) + a MOD b = a, and 

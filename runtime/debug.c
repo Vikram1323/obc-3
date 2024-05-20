@@ -66,9 +66,10 @@ static void debug_exit(void);
 
 static void debug_va_message(char *fmt, va_list va) {
      char buf[256];
-     fflush(stdout);
-     vsprintf(buf, fmt, va);
+     int n = vsnprintf(buf, 255, fmt, va);
+     if (n < 0 || n > 255) panic("debug message overflow");
      strcat(buf, "\n");
+     fflush(stdout);
      send(deb_sock, buf, strlen(buf), 0);
 }
 

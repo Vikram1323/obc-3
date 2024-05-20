@@ -228,8 +228,7 @@ value *dltrap(value *bp) {
           prim = find_prim(name);
      else {
           /* Look for a static wrapper */
-          char primname[32];
-          sprintf(primname, "P_%s", name);
+          char *primname = mysprintf("P_%s", name);
           prim = find_prim(primname);
      }
 

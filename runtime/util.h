@@ -37,6 +37,7 @@ void panic(const char *msg, ...);
 void *must_alloc(int n, const char *msg);
 void *must_realloc(void *p, int n0, int n, const char *msg);
 char *must_strdup(const char *s);
+char *must_sprintf(char *fmt, ...);
 
 /* Auto-grow buffers */
 
