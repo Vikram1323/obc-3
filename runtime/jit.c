@@ -846,11 +846,11 @@ static void make_error(vmlabel lab, int code, int line) {
 
 /* jit_compile -- replace a bytecode routine with native code */
 void jit_compile(value *cp) {
-     proc p = find_proc(dsegaddr(cp));
-
 #ifdef DEBUG
-     if (dflag >= 1)
+     if (dflag >= 1) {
+          proc p = find_proc(dsegaddr(cp));
 	  printf("JIT: %s\n", (p != NULL ? p->p_name : "???"));
+     }
 #endif
 
      jit_cxt = cp; 
