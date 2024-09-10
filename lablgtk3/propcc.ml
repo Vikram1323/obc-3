@@ -135,195 +135,195 @@ let () =
   add_object "GObject" "unit obj";
   add_object "GtkWidget" "Gtk.widget obj"
 
-open Genlex
+open XxGenlex
 
 let lexer =
   make_lexer ["{"; "}"; ":"; "/"; "("; ")"; "->"; "method"; "signal"]
 
-let rec star ?(acc = []) p (strm__ : _ Stream.t) =
-  match try Some (p strm__) with Stream.Failure -> None with
+let rec star ?(acc = []) p (strm__ : _ XxStream.t) =
+  match try Some (p strm__) with XxStream.Failure -> None with
     Some x -> let s = strm__ in star ~acc:(x :: acc) p s
   | _ -> List.rev acc
 
-let may_token tok s = if Stream.peek s = Some tok then Stream.junk s
+let may_token tok s = if XxStream.peek s = Some tok then XxStream.junk s
 
-let ident (strm__ : _ Stream.t) =
-  match Stream.peek strm__ with
-    Some (Ident id) -> Stream.junk strm__; id
-  | _ -> raise Stream.Failure
+let ident (strm__ : _ XxStream.t) =
+  match XxStream.peek strm__ with
+    Some (Ident id) -> XxStream.junk strm__; id
+  | _ -> raise XxStream.Failure
 
-let string (strm__ : _ Stream.t) =
-  match Stream.peek strm__ with
-    Some (String s) -> Stream.junk strm__; s
-  | _ -> raise Stream.Failure
+let string (strm__ : _ XxStream.t) =
+  match XxStream.peek strm__ with
+    Some (String s) -> XxStream.junk strm__; s
+  | _ -> raise XxStream.Failure
 
-let may_colon p def (strm__ : _ Stream.t) =
-  match Stream.peek strm__ with
-    Some (Kwd ":") -> Stream.junk strm__; let s = strm__ in p s
+let may_colon p def (strm__ : _ XxStream.t) =
+  match XxStream.peek strm__ with
+    Some (Kwd ":") -> XxStream.junk strm__; let s = strm__ in p s
   | _ -> def
 
-let may_string def (strm__ : _ Stream.t) =
-  match Stream.peek strm__ with
-    Some (String s) -> Stream.junk strm__; s
+let may_string def (strm__ : _ XxStream.t) =
+  match XxStream.peek strm__ with
+    Some (String s) -> XxStream.junk strm__; s
   | _ -> def
 
-let may_name s (strm__ : _ Stream.t) =
-  match Stream.peek strm__ with
+let may_name s (strm__ : _ XxStream.t) =
+  match XxStream.peek strm__ with
     Some (Kwd "(") ->
-      Stream.junk strm__;
-      begin match Stream.peek strm__ with
+      XxStream.junk strm__;
+      begin match XxStream.peek strm__ with
         Some (Ident id) ->
-          Stream.junk strm__;
-          begin match Stream.peek strm__ with
-            Some (Kwd ")") -> Stream.junk strm__; id
-          | _ -> raise (Stream.Error "")
+          XxStream.junk strm__;
+          begin match XxStream.peek strm__ with
+            Some (Kwd ")") -> XxStream.junk strm__; id
+          | _ -> raise (XxStream.Error "")
           end
-      | _ -> raise (Stream.Error "")
+      | _ -> raise (XxStream.Error "")
       end
   | _ -> camlize s
 
-let next_attr (strm__ : _ Stream.t) =
-  match Stream.peek strm__ with
+let next_attr (strm__ : _ XxStream.t) =
+  match XxStream.peek strm__ with
     Some (Kwd "/") ->
-      Stream.junk strm__;
-      begin match Stream.peek strm__ with
+      XxStream.junk strm__;
+      begin match XxStream.peek strm__ with
         Some (Ident id) ->
-          Stream.junk strm__;
+          XxStream.junk strm__;
           let ids =
             try star ~acc:[id] ident strm__ with
-              Stream.Failure -> raise (Stream.Error "")
+              XxStream.Failure -> raise (XxStream.Error "")
           in
           String.concat ~sep:"" ids
-      | _ -> raise (Stream.Error "")
+      | _ -> raise (XxStream.Error "")
       end
-  | _ -> raise Stream.Failure
+  | _ -> raise XxStream.Failure
 
 let attributes =
   ["Read"; "Write"; "Construct"; "ConstructOnly"; "NoSet"; "Set"; "NoWrap";
    "Wrap"; "NoGet"; "VSet"; "NoVSet"]
 
-let label_type2 id (strm__ : _ Stream.t) =
-  match Stream.peek strm__ with
+let label_type2 id (strm__ : _ XxStream.t) =
+  match XxStream.peek strm__ with
     Some (Kwd ":") ->
-      Stream.junk strm__;
-      begin match Stream.peek strm__ with
-        Some (Ident ty) -> Stream.junk strm__; id, ty
-      | _ -> raise (Stream.Error "")
+      XxStream.junk strm__;
+      begin match XxStream.peek strm__ with
+        Some (Ident ty) -> XxStream.junk strm__; id, ty
+      | _ -> raise (XxStream.Error "")
       end
   | _ -> "", id
-let label_type (strm__ : _ Stream.t) =
-  match Stream.peek strm__ with
+let label_type (strm__ : _ XxStream.t) =
+  match XxStream.peek strm__ with
     Some (Ident id) ->
-      Stream.junk strm__;
+      XxStream.junk strm__;
       begin try label_type2 id strm__ with
-        Stream.Failure -> raise (Stream.Error "")
+        XxStream.Failure -> raise (XxStream.Error "")
       end
-  | _ -> raise Stream.Failure
+  | _ -> raise XxStream.Failure
 
 type marshal =
     Function of string
   | Types of (string list * string list * string)
 
-let return_type (l, types) (strm__ : _ Stream.t) =
-  match Stream.peek strm__ with
+let return_type (l, types) (strm__ : _ XxStream.t) =
+  match XxStream.peek strm__ with
     Some (Kwd "->") ->
-      Stream.junk strm__;
-      begin match Stream.peek strm__ with
-        Some (Ident ret) -> Stream.junk strm__; Types (l, types, ret)
-      | _ -> raise (Stream.Error "")
+      XxStream.junk strm__;
+      begin match XxStream.peek strm__ with
+        Some (Ident ret) -> XxStream.junk strm__; Types (l, types, ret)
+      | _ -> raise (XxStream.Error "")
       end
   | _ -> Types (l, types, "")
 
-let marshaller (strm__ : _ Stream.t) =
-  match Stream.peek strm__ with
-    Some (String s) -> Stream.junk strm__; Function s
+let marshaller (strm__ : _ XxStream.t) =
+  match XxStream.peek strm__ with
+    Some (String s) -> XxStream.junk strm__; Function s
   | Some (Kwd ":") ->
-      Stream.junk strm__;
+      XxStream.junk strm__;
       let types =
         try star label_type strm__ with
-          Stream.Failure -> raise (Stream.Error "")
+          XxStream.Failure -> raise (XxStream.Error "")
       in
       let s = strm__ in return_type (List.split types) s
   | _ -> Types ([], [], "")
 
-let simple_attr (strm__ : _ Stream.t) =
-  match Stream.peek strm__ with
+let simple_attr (strm__ : _ XxStream.t) =
+  match XxStream.peek strm__ with
     Some (Kwd "/") ->
-      Stream.junk strm__;
-      begin match Stream.peek strm__ with
-        Some (Ident s) -> Stream.junk strm__; s
-      | _ -> raise (Stream.Error "")
+      XxStream.junk strm__;
+      begin match XxStream.peek strm__ with
+        Some (Ident s) -> XxStream.junk strm__; s
+      | _ -> raise (XxStream.Error "")
       end
-  | _ -> raise Stream.Failure
+  | _ -> raise XxStream.Failure
 
-let field (strm__ : _ Stream.t) =
-  match Stream.peek strm__ with
+let field (strm__ : _ XxStream.t) =
+  match XxStream.peek strm__ with
     Some (String name) ->
-      Stream.junk strm__;
+      XxStream.junk strm__;
       let mlname =
         try may_name name strm__ with
-          Stream.Failure -> raise (Stream.Error "")
+          XxStream.Failure -> raise (XxStream.Error "")
       in
-      begin match Stream.peek strm__ with
+      begin match XxStream.peek strm__ with
         Some (Ident gtype) ->
-          Stream.junk strm__;
-          begin match Stream.peek strm__ with
+          XxStream.junk strm__;
+          begin match XxStream.peek strm__ with
             Some (Kwd ":") ->
-              Stream.junk strm__;
-              begin match Stream.peek strm__ with
+              XxStream.junk strm__;
+              begin match XxStream.peek strm__ with
                 Some (Ident attr0) ->
-                  Stream.junk strm__;
+                  XxStream.junk strm__;
                   let attrs =
                     try star ~acc:[attr0] next_attr strm__ with
-                      Stream.Failure -> raise (Stream.Error "")
+                      XxStream.Failure -> raise (XxStream.Error "")
                   in
                   if not (List.for_all attrs ~f:(List.mem ~set:attributes))
                   then
-                    raise (Stream.Error "bad attribute");
+                    raise (XxStream.Error "bad attribute");
                   `Prop (name, mlname, gtype, attrs)
-              | _ -> raise (Stream.Error "")
+              | _ -> raise (XxStream.Error "")
               end
-          | _ -> raise (Stream.Error "")
+          | _ -> raise (XxStream.Error "")
           end
-      | _ -> raise (Stream.Error "")
+      | _ -> raise (XxStream.Error "")
       end
   | Some (Kwd "method") ->
-      Stream.junk strm__;
-      begin match Stream.peek strm__ with
+      XxStream.junk strm__;
+      begin match XxStream.peek strm__ with
         Some (Ident name) ->
-          Stream.junk strm__;
+          XxStream.junk strm__;
           let ty =
             try may_colon string "unit" strm__ with
-              Stream.Failure -> raise (Stream.Error "")
+              XxStream.Failure -> raise (XxStream.Error "")
           in
           let attrs =
             try star simple_attr strm__ with
-              Stream.Failure -> raise (Stream.Error "")
+              XxStream.Failure -> raise (XxStream.Error "")
           in
           if not (List.for_all attrs ~f:(List.mem ~set:["Wrap"])) then
-            raise (Stream.Error "bad attribute");
+            raise (XxStream.Error "bad attribute");
           `Method (name, ty, attrs)
-      | _ -> raise (Stream.Error "")
+      | _ -> raise (XxStream.Error "")
       end
   | Some (Kwd "signal") ->
-      Stream.junk strm__;
-      begin match Stream.peek strm__ with
+      XxStream.junk strm__;
+      begin match XxStream.peek strm__ with
         Some (Ident name) ->
-          Stream.junk strm__;
+          XxStream.junk strm__;
           let m =
             try marshaller strm__ with
-              Stream.Failure -> raise (Stream.Error "")
+              XxStream.Failure -> raise (XxStream.Error "")
           in
           let l =
             try star simple_attr strm__ with
-              Stream.Failure -> raise (Stream.Error "")
+              XxStream.Failure -> raise (XxStream.Error "")
           in
           if not (List.for_all l ~f:(List.mem ~set:["Wrap"; "NoWrap"])) then
-            raise (Stream.Error "bad attribute");
+            raise (XxStream.Error "bad attribute");
           `Signal (name, m, l)
-      | _ -> raise (Stream.Error "")
+      | _ -> raise (XxStream.Error "")
       end
-  | _ -> raise Stream.Failure
+  | _ -> raise XxStream.Failure
 
 let split_fields l =
   List.fold_right l ~init:([], [], [])
@@ -335,54 +335,54 @@ let split_fields l =
 
 let verb_braces = ref 0
 
-let rec verbatim buf (strm__ : _ Stream.t) =
-  match Stream.peek strm__ with
+let rec verbatim buf (strm__ : _ XxStream.t) =
+  match XxStream.peek strm__ with
     Some '}' ->
-      Stream.junk strm__;
+      XxStream.junk strm__;
       let s = strm__ in
       if !verb_braces = 0 then Buffer.contents buf
       else begin decr verb_braces; Buffer.add_char buf '}'; verbatim buf s end
   | Some '{' ->
-      Stream.junk strm__;
+      XxStream.junk strm__;
       let s = strm__ in
       Buffer.add_char buf '{'; incr verb_braces; verbatim buf s
   | Some '\\' ->
-      Stream.junk strm__;
-      begin match Stream.peek strm__ with
+      XxStream.junk strm__;
+      begin match XxStream.peek strm__ with
         Some c ->
-          Stream.junk strm__;
+          XxStream.junk strm__;
           let s = strm__ in
           if c <> '}' && c <> '{' then Buffer.add_char buf '\\';
           Buffer.add_char buf c;
           verbatim buf s
-      | _ -> raise (Stream.Error "")
+      | _ -> raise (XxStream.Error "")
       end
   | Some c ->
-      Stream.junk strm__;
+      XxStream.junk strm__;
       let s = strm__ in Buffer.add_char buf c; verbatim buf s
-  | _ -> raise Stream.Failure
+  | _ -> raise XxStream.Failure
 
-let read_pair (strm__ : _ Stream.t) =
-  match Stream.peek strm__ with
+let read_pair (strm__ : _ XxStream.t) =
+  match XxStream.peek strm__ with
     Some (Ident cls) ->
-      Stream.junk strm__;
+      XxStream.junk strm__;
       let data =
         try may_string (camlize cls) strm__ with
-          Stream.Failure -> raise (Stream.Error "")
+          XxStream.Failure -> raise (XxStream.Error "")
       in
       cls, data
-  | _ -> raise Stream.Failure
+  | _ -> raise XxStream.Failure
 
-let qualifier (strm__ : _ Stream.t) =
-  match Stream.peek strm__ with
+let qualifier (strm__ : _ XxStream.t) =
+  match XxStream.peek strm__ with
     Some (Ident id) ->
-      Stream.junk strm__;
+      XxStream.junk strm__;
       let data =
         try may_string "" strm__ with
-          Stream.Failure -> raise (Stream.Error "")
+          XxStream.Failure -> raise (XxStream.Error "")
       in
       id, data
-  | _ -> raise Stream.Failure
+  | _ -> raise XxStream.Failure
 
 let prefix = ref ""
 let tagprefix = ref ""
@@ -395,39 +395,39 @@ let class_qualifiers =
   ["abstract"; "notype"; "hv"; "set"; "wrap"; "wrapset"; "vset"; "tag";
    "wrapsig"; "type"; "gobject"]
 
-let process_phrase ~chars (strm__ : _ Stream.t) =
-  match Stream.peek strm__ with
+let process_phrase ~chars (strm__ : _ XxStream.t) =
+  match XxStream.peek strm__ with
     Some (Ident "class") ->
-      Stream.junk strm__;
-      begin match Stream.peek strm__ with
+      XxStream.junk strm__;
+      begin match XxStream.peek strm__ with
         Some (Ident name) ->
-          Stream.junk strm__;
+          XxStream.junk strm__;
           let gtk_name =
             try may_string (!prefix ^ name) strm__ with
-              Stream.Failure -> raise (Stream.Error "")
+              XxStream.Failure -> raise (XxStream.Error "")
           in
           let attrs =
             try star qualifier strm__ with
-              Stream.Failure -> raise (Stream.Error "")
+              XxStream.Failure -> raise (XxStream.Error "")
           in
           let parent =
             try may_colon ident "" strm__ with
-              Stream.Failure -> raise (Stream.Error "")
+              XxStream.Failure -> raise (XxStream.Error "")
           in
-          begin match Stream.peek strm__ with
+          begin match XxStream.peek strm__ with
             Some (Kwd "{") ->
-              Stream.junk strm__;
+              XxStream.junk strm__;
               let fields =
                 try star field strm__ with
-                  Stream.Failure -> raise (Stream.Error "")
+                  XxStream.Failure -> raise (XxStream.Error "")
               in
-              begin match Stream.peek strm__ with
+              begin match XxStream.peek strm__ with
                 Some (Kwd "}") ->
-                  Stream.junk strm__;
+                  XxStream.junk strm__;
                   if List.exists attrs
                        ~f:(fun (x, _) -> not (List.mem x ~set:class_qualifiers))
                   then
-                    raise (Stream.Error "bad qualifier");
+                    raise (XxStream.Error "bad qualifier");
                   let attrs = ("parent", parent) :: attrs in
                   let attrs =
                     if parent = "GObject" then ("gobject", "") :: attrs
@@ -436,111 +436,111 @@ let process_phrase ~chars (strm__ : _ Stream.t) =
                   let (props, meths, sigs) = split_fields fields in
                   decls :=
                     (name, gtk_name, attrs, props, meths, sigs) :: !decls
-              | _ -> raise (Stream.Error "")
+              | _ -> raise (XxStream.Error "")
               end
-          | _ -> raise (Stream.Error "")
+          | _ -> raise (XxStream.Error "")
           end
-      | _ -> raise (Stream.Error "")
+      | _ -> raise (XxStream.Error "")
       end
   | Some (Ident "initializer") ->
-      Stream.junk strm__;
-      begin match Stream.peek strm__ with
+      XxStream.junk strm__;
+      begin match XxStream.peek strm__ with
         Some (String func) ->
-          Stream.junk strm__; initializers := !initializers @ [func]
-      | _ -> raise (Stream.Error "")
+          XxStream.junk strm__; initializers := !initializers @ [func]
+      | _ -> raise (XxStream.Error "")
       end
   | Some (Ident "header") ->
-      Stream.junk strm__;
-      begin match Stream.peek strm__ with
+      XxStream.junk strm__;
+      begin match XxStream.peek strm__ with
         Some (Kwd "{") ->
-          Stream.junk strm__;
+          XxStream.junk strm__;
           let h = verbatim (Buffer.create 1000) chars in
           headers := !headers @ [h]
-      | _ -> raise (Stream.Error "")
+      | _ -> raise (XxStream.Error "")
       end
   | Some (Ident "oheader") ->
-      Stream.junk strm__;
-      begin match Stream.peek strm__ with
+      XxStream.junk strm__;
+      begin match XxStream.peek strm__ with
         Some (Kwd "{") ->
-          Stream.junk strm__;
+          XxStream.junk strm__;
           let h = verbatim (Buffer.create 1000) chars in
           oheaders := !oheaders @ [h]
-      | _ -> raise (Stream.Error "")
+      | _ -> raise (XxStream.Error "")
       end
   | Some (Ident "prefix") ->
-      Stream.junk strm__;
-      begin match Stream.peek strm__ with
-        Some (String id) -> Stream.junk strm__; prefix := id
-      | _ -> raise (Stream.Error "")
+      XxStream.junk strm__;
+      begin match XxStream.peek strm__ with
+        Some (String id) -> XxStream.junk strm__; prefix := id
+      | _ -> raise (XxStream.Error "")
       end
   | Some (Ident "tagprefix") ->
-      Stream.junk strm__;
-      begin match Stream.peek strm__ with
-        Some (String id) -> Stream.junk strm__; tagprefix := id
-      | _ -> raise (Stream.Error "")
+      XxStream.junk strm__;
+      begin match XxStream.peek strm__ with
+        Some (String id) -> XxStream.junk strm__; tagprefix := id
+      | _ -> raise (XxStream.Error "")
       end
   | Some (Ident "conversions") ->
-      Stream.junk strm__;
+      XxStream.junk strm__;
       let pre1 =
         try may_string "" strm__ with
-          Stream.Failure -> raise (Stream.Error "")
+          XxStream.Failure -> raise (XxStream.Error "")
       in
       let pre2 =
         try may_string pre1 strm__ with
-          Stream.Failure -> raise (Stream.Error "")
+          XxStream.Failure -> raise (XxStream.Error "")
       in
-      begin match Stream.peek strm__ with
+      begin match XxStream.peek strm__ with
         Some (Kwd "{") ->
-          Stream.junk strm__;
+          XxStream.junk strm__;
           let l =
             try star read_pair strm__ with
-              Stream.Failure -> raise (Stream.Error "")
+              XxStream.Failure -> raise (XxStream.Error "")
           in
-          begin match Stream.peek strm__ with
+          begin match XxStream.peek strm__ with
             Some (Kwd "}") ->
-              Stream.junk strm__;
+              XxStream.junk strm__;
               List.iter l
                 ~f:(fun (k, d) ->
                    Hashtbl.add conversions ~key:(pre1 ^ k)
                      ~data:(if pre2 = "" then d else pre2 ^ "." ^ d))
-          | _ -> raise (Stream.Error "")
+          | _ -> raise (XxStream.Error "")
           end
-      | _ -> raise (Stream.Error "")
+      | _ -> raise (XxStream.Error "")
       end
   | Some (Ident "classes") ->
-      Stream.junk strm__;
-      begin match Stream.peek strm__ with
+      XxStream.junk strm__;
+      begin match XxStream.peek strm__ with
         Some (Kwd "{") ->
-          Stream.junk strm__;
+          XxStream.junk strm__;
           let l =
             try star read_pair strm__ with
-              Stream.Failure -> raise (Stream.Error "")
+              XxStream.Failure -> raise (XxStream.Error "")
           in
-          begin match Stream.peek strm__ with
+          begin match XxStream.peek strm__ with
             Some (Kwd "}") ->
-              Stream.junk strm__;
+              XxStream.junk strm__;
               List.iter l ~f:(fun (k, d) -> add_object k d)
-          | _ -> raise (Stream.Error "")
+          | _ -> raise (XxStream.Error "")
           end
-      | _ -> raise (Stream.Error "")
+      | _ -> raise (XxStream.Error "")
       end
   | Some (Ident "boxed") ->
-      Stream.junk strm__;
-      begin match Stream.peek strm__ with
+      XxStream.junk strm__;
+      begin match XxStream.peek strm__ with
         Some (Kwd "{") ->
-          Stream.junk strm__;
+          XxStream.junk strm__;
           let l =
             try star read_pair strm__ with
-              Stream.Failure -> raise (Stream.Error "")
+              XxStream.Failure -> raise (XxStream.Error "")
           in
-          begin match Stream.peek strm__ with
+          begin match XxStream.peek strm__ with
             Some (Kwd "}") ->
-              Stream.junk strm__; List.iter l ~f:(fun (k, d) -> add_boxed k d)
-          | _ -> raise (Stream.Error "")
+              XxStream.junk strm__; List.iter l ~f:(fun (k, d) -> add_boxed k d)
+          | _ -> raise (XxStream.Error "")
           end
-      | _ -> raise (Stream.Error "")
+      | _ -> raise (XxStream.Error "")
       end
-  | Some _ -> Stream.junk strm__; raise (Stream.Error "")
+  | Some _ -> XxStream.junk strm__; raise (XxStream.Error "")
   | _ -> raise End_of_file
 
 let all_props = Hashtbl.create 137
@@ -559,17 +559,17 @@ let process_file f =
     ["open GtkSignal"; "open Gobject"; "open Data"; "let set = set";
      "let get = get"; "let param = param"];
   let ic = open_in f in
-  let chars = Stream.of_channel ic in
+  let chars = XxStream.of_channel ic in
   let s = lexer chars in
   begin try while true do process_phrase ~chars s done with
     End_of_file -> ()
-  | Stream.Error _ | Stream.Failure ->
+  | XxStream.Error _ | XxStream.Failure ->
       Printf.eprintf "Parse error in file `%s' before char %d\n" f
-        (Stream.count chars);
+        (XxStream.count chars);
       exit 2
   | exn ->
       Printf.eprintf "Exception %s in file `%s' before char %d\n"
-        (Printexc.to_string exn) f (Stream.count chars);
+        (Printexc.to_string exn) f (XxStream.count chars);
       exit 2
   end;
   (* Preproccess *)

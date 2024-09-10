@@ -29,59 +29,59 @@ let camlize id =
   done;
   Buffer.contents b
 
-open Genlex
+open XxGenlex
 
 let lexer = make_lexer ["type"; "="; "["; "]"; "`"; "|"]
 
-let may_string (strm__ : _ Stream.t) =
-  match Stream.peek strm__ with
-    Some (String s) -> Stream.junk strm__; s
+let may_string (strm__ : _ XxStream.t) =
+  match XxStream.peek strm__ with
+    Some (String s) -> XxStream.junk strm__; s
   | _ -> ""
 
-let may_bar (strm__ : _ Stream.t) =
-  match Stream.peek strm__ with
-    Some (Kwd "|") -> Stream.junk strm__; ()
+let may_bar (strm__ : _ XxStream.t) =
+  match XxStream.peek strm__ with
+    Some (Kwd "|") -> XxStream.junk strm__; ()
   | _ -> ()
 
-let rec ident_list (strm__ : _ Stream.t) =
-  match Stream.peek strm__ with
+let rec ident_list (strm__ : _ XxStream.t) =
+  match XxStream.peek strm__ with
     Some (Kwd "`") ->
-      Stream.junk strm__;
-      begin match Stream.peek strm__ with
+      XxStream.junk strm__;
+      begin match XxStream.peek strm__ with
         Some (Ident x) ->
-          Stream.junk strm__;
+          XxStream.junk strm__;
           let trans =
             try may_string strm__ with
-              Stream.Failure -> raise (Stream.Error "")
+              XxStream.Failure -> raise (XxStream.Error "")
           in
           let _ =
-            try may_bar strm__ with Stream.Failure -> raise (Stream.Error "")
+            try may_bar strm__ with XxStream.Failure -> raise (XxStream.Error "")
           in
           let s = strm__ in (x, trans) :: ident_list s
-      | _ -> raise (Stream.Error "")
+      | _ -> raise (XxStream.Error "")
       end
   | _ -> []
 
 let static = ref false
 
-let rec star ?(acc = []) p (strm__ : _ Stream.t) =
-  match try Some (p strm__) with Stream.Failure -> None with
+let rec star ?(acc = []) p (strm__ : _ XxStream.t) =
+  match try Some (p strm__) with XxStream.Failure -> None with
     Some x -> let s = strm__ in star ~acc:(x :: acc) p s
   | _ -> List.rev acc
 
-let flag (strm__ : _ Stream.t) =
-  match Stream.peek strm__ with
+let flag (strm__ : _ XxStream.t) =
+  match XxStream.peek strm__ with
     Some (Ident ("public" | "private" | "noconv" | "flags" as s)) ->
-      Stream.junk strm__; s
-  | _ -> raise Stream.Failure
+      XxStream.junk strm__; s
+  | _ -> raise XxStream.Failure
 
-let protect (strm__ : _ Stream.t) =
-  match Stream.peek strm__ with
+let protect (strm__ : _ XxStream.t) =
+  match XxStream.peek strm__ with
     Some (Ident "protect") ->
-      Stream.junk strm__;
-      begin match Stream.peek strm__ with
-        Some (Ident m) -> Stream.junk strm__; Some m
-      | _ -> raise (Stream.Error "")
+      XxStream.junk strm__;
+      begin match XxStream.peek strm__ with
+        Some (Ident m) -> XxStream.junk strm__; Some m
+      | _ -> raise (XxStream.Error "")
       end
   | _ -> None
 
@@ -98,47 +98,47 @@ let all_convs = ref []
 let package = ref ""
 let pkgprefix = ref ""
 
-let declaration ~hc ~cc (strm__ : _ Stream.t) =
-  match Stream.peek strm__ with
+let declaration ~hc ~cc (strm__ : _ XxStream.t) =
+  match XxStream.peek strm__ with
     Some (Kwd "type") ->
-      Stream.junk strm__;
+      XxStream.junk strm__;
       let flags =
-        try star flag strm__ with Stream.Failure -> raise (Stream.Error "")
+        try star flag strm__ with XxStream.Failure -> raise (XxStream.Error "")
       in
       let guard =
-        try protect strm__ with Stream.Failure -> raise (Stream.Error "")
+        try protect strm__ with XxStream.Failure -> raise (XxStream.Error "")
       in
-      begin match Stream.peek strm__ with
+      begin match XxStream.peek strm__ with
         Some (Ident mlname) ->
-          Stream.junk strm__;
+          XxStream.junk strm__;
           let name =
             try may_string strm__ with
-              Stream.Failure -> raise (Stream.Error "")
+              XxStream.Failure -> raise (XxStream.Error "")
           in
-          begin match Stream.peek strm__ with
+          begin match XxStream.peek strm__ with
             Some (Kwd "=") ->
-              Stream.junk strm__;
+              XxStream.junk strm__;
               let prefix =
                 try may_string strm__ with
-                  Stream.Failure -> raise (Stream.Error "")
+                  XxStream.Failure -> raise (XxStream.Error "")
               in
-              begin match Stream.peek strm__ with
+              begin match XxStream.peek strm__ with
                 Some (Kwd "[") ->
-                  Stream.junk strm__;
+                  XxStream.junk strm__;
                   let _ =
                     try may_bar strm__ with
-                      Stream.Failure -> raise (Stream.Error "")
+                      XxStream.Failure -> raise (XxStream.Error "")
                   in
                   let tags =
                     try ident_list strm__ with
-                      Stream.Failure -> raise (Stream.Error "")
+                      XxStream.Failure -> raise (XxStream.Error "")
                   in
-                  begin match Stream.peek strm__ with
+                  begin match XxStream.peek strm__ with
                     Some (Kwd "]") ->
-                      Stream.junk strm__;
+                      XxStream.junk strm__;
                       let suffix =
                         try may_string strm__ with
-                          Stream.Failure -> raise (Stream.Error "")
+                          XxStream.Failure -> raise (XxStream.Error "")
                       in
                       let oh x = fprintf hc x
                       and oc x = fprintf cc x in
@@ -225,32 +225,32 @@ let declaration ~hc ~cc (strm__ : _ Stream.t) =
                         oh
                           "#define %s_val(key) ml_lookup_to_c (ml_table_%s, key)\n\n"
                           cname name
-                  | _ -> raise (Stream.Error "")
+                  | _ -> raise (XxStream.Error "")
                   end
-              | _ -> raise (Stream.Error "")
+              | _ -> raise (XxStream.Error "")
               end
-          | _ -> raise (Stream.Error "")
+          | _ -> raise (XxStream.Error "")
           end
-      | _ -> raise (Stream.Error "")
+      | _ -> raise (XxStream.Error "")
       end
   | Some (Ident "package") ->
-      Stream.junk strm__;
-      begin match Stream.peek strm__ with
-        Some (String s) -> Stream.junk strm__; package := s
-      | _ -> raise (Stream.Error "")
+      XxStream.junk strm__;
+      begin match XxStream.peek strm__ with
+        Some (String s) -> XxStream.junk strm__; package := s
+      | _ -> raise (XxStream.Error "")
       end
   | Some (Ident "prefix") ->
-      Stream.junk strm__;
-      begin match Stream.peek strm__ with
-        Some (String s) -> Stream.junk strm__; pkgprefix := s
-      | _ -> raise (Stream.Error "")
+      XxStream.junk strm__;
+      begin match XxStream.peek strm__ with
+        Some (String s) -> XxStream.junk strm__; pkgprefix := s
+      | _ -> raise (XxStream.Error "")
       end
   | _ -> raise End_of_file
 
 
 let process ic ~hc ~cc =
   all_convs := [];
-  let chars = Stream.of_channel ic in
+  let chars = XxStream.of_channel ic in
   let s = lexer chars in
   try while true do declaration s ~hc ~cc done with
     End_of_file ->
@@ -302,10 +302,10 @@ let process ic ~hc ~cc =
              out "@ let %s = %s %s_tbl" s conv s);
         out "@]@.end@.";
         close_out mlc
-  | Stream.Error err ->
+  | XxStream.Error err ->
       failwith
         (Printf.sprintf "Parsing error \"%s\" at character %d on input stream"
-           err (Stream.count chars))
+           err (XxStream.count chars))
 
 let main () =
   let inputs = ref [] in

@@ -135,8 +135,11 @@ $(COBJS) ml_gtksourceview3.o: \
 %_tags.c %_tags.h %Enums.ml: %_tags.var varcc
 	./varcc -c $*_tags.c -h $*_tags.h $<
 
-propcc varcc: %: %.ml
-	ocamlc $(MLFLAGS) -o $@ $<
+propcc varcc: %: xxStream.cmo xxGenlex.cmo %.cmo 
+	ocamlc $(MLFLAGS) -o $@ $^
+
+varcc.cmo propcc.cmo xxGenlex.cmo: xxGenlex.cmi xxStream.cmi
+xxGenlex.cmi xxStream.cmo: xxStream.cmi
 
 #propcc.ml varcc.ml: %.ml: %.ml4
 #	camlp4 pa_o.cmo pa_op.cmo pr_o.cmo -impl $< >$@
